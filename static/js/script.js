@@ -54,6 +54,7 @@ async function sendMessage() {
     timeoutHandle = setTimeout(() => {
         displayAssistantMessage('😿 er is iets misgegaan, we beginnen opnieuw!');
         hideLoader();
+        resetThread();
     }, 15000);
 
     try {
@@ -63,14 +64,16 @@ async function sendMessage() {
             body: JSON.stringify({
                 thread_id: thread_id,
                 user_input: userInput,
-                assistant_id: 'asst_MvJxGibmyEA8wbticZgmbXIG'
+                assistant_id: 'asst_ejPRaNkIhjPpNHDHCnoI5zKY'
             })
         });
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Error:', errorData.error);
+            displayAssistantMessage('😿 er is iets misgegaan, we beginnen opnieuw!');
             hideLoader();
             clearTimeout(timeoutHandle);
+            resetThread();
             return;
         }
         const data = await response.json();
@@ -93,13 +96,28 @@ async function sendMessage() {
         resetFilters();
     } catch (error) {
         console.error('Unexpected error:', error);
+        displayAssistantMessage('😿 er is iets misgegaan, we beginnen opnieuw!');
         hideLoader();
         clearTimeout(timeoutHandle);
+        resetThread();
     }
 
     checkInput();
     scrollToBottom();
 }
+
+function resetThread() {
+    startThread();
+    document.getElementById('messages').innerHTML = '';
+    document.getElementById('search-results').innerHTML = '';
+    document.getElementById('user-input').placeholder = "Welk boek zoek je? Of informatie over..?";
+    addOpeningMessage();
+    addPlaceholders();
+    scrollToBottom();
+    
+    resetFilters();
+}
+
 
 async function sendStatusKlaar() {
     try {
@@ -109,7 +127,7 @@ async function sendStatusKlaar() {
             body: JSON.stringify({
                 thread_id: thread_id,
                 user_input: 'STATUS : KLAAR',
-                assistant_id: 'asst_MvJxGibmyEA8wbticZgmbXIG'
+                assistant_id: 'asst_ejPRaNkIhjPpNHDHCnoI5zKY'
             })
         });
         if (!response.ok) {
@@ -186,7 +204,7 @@ async function applyFiltersAndSend() {
             body: JSON.stringify({
                 thread_id: thread_id,
                 filter_values: filterString,
-                assistant_id: 'asst_MvJxGibmyEA8wbticZgmbXIG'
+                assistant_id: 'asst_ejPRaNkIhjPpNHDHCnoI5zKY'
             })
         });
 
