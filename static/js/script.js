@@ -1,5 +1,5 @@
 let thread_id = null;
-let timeoutHandle = null; // Timer handle
+let timeoutHandle = null;
 
 function checkInput() {
     const userInput = document.getElementById('user-input').value.trim();
@@ -10,22 +10,22 @@ function checkInput() {
 
     if (userInput === "") {
         sendButton.disabled = true;
-        sendButton.style.backgroundColor = "#ccc"; // Grijze kleur
-        sendButton.style.cursor = "not-allowed"; // Cursor veranderen naar niet toegestaan
+        sendButton.style.backgroundColor = "#ccc";
+        sendButton.style.cursor = "not-allowed";
     } else {
         sendButton.disabled = false;
-        sendButton.style.backgroundColor = "#6d5ab0"; // Originele kleur
-        sendButton.style.cursor = "pointer"; // Cursor veranderen naar pointer
+        sendButton.style.backgroundColor = "#6d5ab0";
+        sendButton.style.cursor = "pointer";
     }
 
     if (!anyChecked) {
         applyFiltersButton.disabled = true;
-        applyFiltersButton.style.backgroundColor = "#ccc"; // Grijze kleur
-        applyFiltersButton.style.cursor = "not-allowed"; // Cursor veranderen naar niet toegestaan
+        applyFiltersButton.style.backgroundColor = "#ccc";
+        applyFiltersButton.style.cursor = "not-allowed";
     } else {
         applyFiltersButton.disabled = false;
-        applyFiltersButton.style.backgroundColor = "#6d5ab0"; // Originele kleur
-        applyFiltersButton.style.cursor = "pointer"; // Cursor veranderen naar pointer
+        applyFiltersButton.style.backgroundColor = "#6d5ab0";
+        applyFiltersButton.style.cursor = "pointer";
     }
 }
 
@@ -45,14 +45,12 @@ async function sendMessage() {
     displayUserMessage(userInput);
     showLoader();
     
-    // Leeg het invoerveld en disable de knop
     const sendButton = document.getElementById('send-button');
     document.getElementById('user-input').value = '';
     sendButton.disabled = true;
-    sendButton.style.backgroundColor = "#ccc"; // Grijze kleur
-    sendButton.style.cursor = "not-allowed"; // Cursor veranderen naar niet toegestaan
+    sendButton.style.backgroundColor = "#ccc";
+    sendButton.style.cursor = "not-allowed";
 
-    // Start timeout for 10 seconds
     timeoutHandle = setTimeout(() => {
         displayAssistantMessage('😿 er is iets misgegaan, we beginnen opnieuw!');
         hideLoader();
@@ -65,19 +63,19 @@ async function sendMessage() {
             body: JSON.stringify({
                 thread_id: thread_id,
                 user_input: userInput,
-                assistant_id: 'asst_CIV1OrVIkkiPA2mny72u8TLO'
+                assistant_id: 'asst_MvJxGibmyEA8wbticZgmbXIG'
             })
         });
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Error:', errorData.error);
             hideLoader();
-            clearTimeout(timeoutHandle); // Clear timeout if there's an error
+            clearTimeout(timeoutHandle);
             return;
         }
         const data = await response.json();
         hideLoader();
-        clearTimeout(timeoutHandle); // Clear timeout if response is received in time
+        clearTimeout(timeoutHandle);
 
         if (!data.response.results) {
             displayAssistantMessage(data.response);
@@ -91,13 +89,15 @@ async function sendMessage() {
             displaySearchResults(data.response.results);
             await sendStatusKlaar();
         }
+        
+        resetFilters();
     } catch (error) {
         console.error('Unexpected error:', error);
         hideLoader();
-        clearTimeout(timeoutHandle); // Clear timeout if there's an unexpected error
+        clearTimeout(timeoutHandle);
     }
 
-    checkInput(); // Check input to disable the button after sending
+    checkInput();
     scrollToBottom();
 }
 
@@ -109,7 +109,7 @@ async function sendStatusKlaar() {
             body: JSON.stringify({
                 thread_id: thread_id,
                 user_input: 'STATUS : KLAAR',
-                assistant_id: 'asst_CIV1OrVIkkiPA2mny72u8TLO'
+                assistant_id: 'asst_MvJxGibmyEA8wbticZgmbXIG'
             })
         });
         if (!response.ok) {
@@ -186,7 +186,7 @@ async function applyFiltersAndSend() {
             body: JSON.stringify({
                 thread_id: thread_id,
                 filter_values: filterString,
-                assistant_id: 'asst_CIV1OrVIkkiPA2mny72u8TLO'
+                assistant_id: 'asst_MvJxGibmyEA8wbticZgmbXIG'
             })
         });
 
@@ -208,12 +208,14 @@ async function applyFiltersAndSend() {
         if (data.thread_id) {
             thread_id = data.thread_id;
         }
+        
+        resetFilters();
     } catch (error) {
         console.error('Unexpected error:', error);
         hideLoader();
     }
 
-    checkInput(); // Check input to disable the button after sending
+    checkInput();
 }
 
 function startNewChat() {
@@ -224,6 +226,8 @@ function startNewChat() {
     addOpeningMessage();
     addPlaceholders();
     scrollToBottom();
+    
+    resetFilters();
 }
 
 function extractSearchQuery(response) {
@@ -232,6 +236,14 @@ function extractSearchQuery(response) {
         return response.split(searchMarker)[1].trim();
     }
     return null;
+}
+
+function resetFilters() {
+    const checkboxes = document.querySelectorAll('#filters input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    checkInput();
 }
 
 function showLoader() {
@@ -250,11 +262,10 @@ function hideLoader() {
         loaderElement.remove();
     }
 
-    // Reactivate the send button when the loader is hidden
     const sendButton = document.getElementById('send-button');
     sendButton.disabled = false;
-    sendButton.style.backgroundColor = "#6d5ab0"; // Originele kleur
-    sendButton.style.cursor = "pointer"; // Cursor veranderen naar pointer
+    sendButton.style.backgroundColor = "#6d5ab0";
+    sendButton.style.cursor = "pointer";
 }
 
 function scrollToBottom() {
@@ -263,7 +274,7 @@ function scrollToBottom() {
 }
 
 function addOpeningMessage() {
-    const openingMessage = "Hoi! Ik ben Nexi en ik help je zoeken naar boeken en informatie in de OBA. Vertel me welk boek of waarover je informatie zoekt!";
+    const openingMessage = "Hoi! Ik ben Nexi, ik help je zoeken naar boeken en informatie in de OBA. Bijvoorbeeld: 'boeken die lijken op Wereldspionnen' of 'heb je informatie over zeezoogdieren?'"
     const messageContainer = document.getElementById('messages');
     const messageElement = document.createElement('div');
     messageElement.classList.add('assistant-message');
@@ -297,18 +308,18 @@ document.querySelectorAll('#filters input[type="checkbox"]').forEach(checkbox =>
     checkbox.addEventListener('change', checkInput);
 });
 
-// Check input on page load to disable the button initially
 window.onload = () => {
     startThread().then(() => {
         addOpeningMessage();
         addPlaceholders();
-        checkInput(); // Check input initially to set the button state
-        document.getElementById('user-input').placeholder = "Welk boek zoek je? Of informatie over..?";
+        checkInput();
+        document.getElementById('user-input').placeholder = "Vertel me wat je zoekt!";
     });
 
-    // Maak zeker dat het element bestaat voordat we onclick toewijzen
     const applyFiltersButton = document.querySelector('button[onclick="applyFiltersAndSend()"]');
     if (applyFiltersButton) {
         applyFiltersButton.onclick = applyFiltersAndSend;
     }
+    
+    resetFilters();
 };

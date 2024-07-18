@@ -5,20 +5,22 @@ import requests
 import aiohttp
 import asyncio
 from dotenv import dotenv_values
+import logging
 
-# Load environment variables from .env file
 config = dotenv_values(".env")
 
 app = Flask(__name__)
 
-# Get API keys from environment variables
 openai.api_key = config['OPENAI_API_KEY']
 typesense_api_key = config['TYPESENSE_API_KEY']
 typesense_api_url = config['TYPESENSE_API_URL']
 
-# Assistant IDs remain in the code
-assistant_id_1 = 'asst_CIV1OrVIkkiPA2mny72u8TLO'
+assistant_id_1 = 'asst_MvJxGibmyEA8wbticZgmbXIG'
 assistant_id_2 = 'asst_mQ8PhYHrTbEvLjfH8bVXPisQ'
+assistant_id_3 = 'asst_f4ZLr7K8s4I6f0t7csMQoNtc'
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 
 class CustomEventHandler(openai.AssistantEventHandler):
     def __init__(self):
@@ -69,7 +71,17 @@ def extract_search_query(response):
     if search_marker in response:
         start_index = response.find(search_marker) + len(search_marker)
         search_query = response[start_index:].strip()
+        logging.info(f"Extracted search query: {search_query}")
         return search_query
+    return None
+
+def extract_comparison_query(response):
+    comparison_marker = "VERGELIJKINGS_QUERY:"
+    if comparison_marker in response:
+        start_index = response.find(comparison_marker) + len(comparison_marker)
+        comparison_query = response[start_index:].strip()
+        logging.info(f"Extracted comparison query: {comparison_query}")
+        return comparison_query
     return None
 
 def parse_assistant_message(content):
@@ -95,6 +107,8 @@ async def check_urls(urls):
         return await asyncio.gather(*tasks)
 
 def perform_typesense_search(params):
+    logging.info(f"Performing Typesense search with parameters: {params}")
+    
     headers = {
         'Content-Type': 'application/json',
         'X-TYPESENSE-API-KEY': typesense_api_key,
@@ -158,8 +172,10 @@ def send_message():
 
         response_text, thread_id = call_assistant(assistant_id, user_input, thread_id)
         search_query = extract_search_query(response_text)
+        comparison_query = extract_comparison_query(response_text)
 
         if search_query:
+            logging.info(f"Query passed to Assistant 2: {search_query}")
             response_text_2, thread_id = call_assistant(assistant_id_2, search_query, thread_id)
             search_params = parse_assistant_message(response_text_2)
             if search_params:
@@ -167,6 +183,15 @@ def send_message():
                 return jsonify({'response': search_results, 'thread_id': thread_id})
             else:
                 return jsonify({'response': response_text_2, 'thread_id': thread_id})
+        elif comparison_query:
+            logging.info(f"Query passed to Assistant 3: {comparison_query}")
+            response_text_3, thread_id = call_assistant(assistant_id_3, comparison_query, thread_id)
+            search_params = parse_assistant_message(response_text_3)
+            if search_params:
+                search_results = perform_typesense_search(search_params)
+                return jsonify({'response': search_results, 'thread_id': thread_id})
+            else:
+                return jsonify({'response': response_text_3, 'thread_id': thread_id})
         else:
             return jsonify({'response': response_text, 'thread_id': thread_id})
     except openai.error.OpenAIError as e:
@@ -185,8 +210,10 @@ def apply_filters():
 
         response_text, thread_id = call_assistant(assistant_id, filter_values, thread_id)
         search_query = extract_search_query(response_text)
+        comparison_query = extract_comparison_query(response_text)
 
         if search_query:
+            logging.info(f"Query passed to Assistant 2 with filters: {search_query}")
             response_text_2, thread_id = call_assistant(assistant_id_2, search_query, thread_id)
             search_params = parse_assistant_message(response_text_2)
             if search_params:
@@ -194,17 +221,24 @@ def apply_filters():
                 return jsonify({'results': search_results['results'], 'thread_id': thread_id})
             else:
                 return jsonify({'response': response_text_2, 'thread_id': thread_id})
+        elif comparison_query:
+            logging.info(f"Query passed to Assistant 3 with filters: {comparison_query}")
+            response_text_3, thread_id = call_assistant(assistant_id_3, comparison_query, thread_id)
+            search_params = parse_assistant_message(response_text_3)
+            if search_params:
+                search_results = perform_typesense_search(search_params)
+                return jsonify({'results': search_results['results'], 'thread_id': thread_id})
+            else:
+                return jsonify({'response': response_text_3, 'thread_id': thread_id})
         else:
             return jsonify({'response': response_text, 'thread_id': thread_id})
     except openai.error.OpenAIError as e:
         return jsonify({'error': str(e)}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 @app.route('/reset', methods=['POST'])
 def reset():
     return jsonify({'status': 'reset'})
 
-if __name__ == '__main__':
-    app.run(debug=True)
-    
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
