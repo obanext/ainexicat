@@ -6,14 +6,15 @@ import aiohttp
 import asyncio
 from dotenv import dotenv_values
 import logging
+import os
 
-config = dotenv_values(".env")
+openai_api_key = os.environ.get('OPENAI_API_KEY')
+typesense_api_key = os.environ.get('TYPESENSE_API_KEY')
+typesense_api_url = os.environ.get('TYPESENSE_API_URL')
 
 app = Flask(__name__)
 
-openai.api_key = config['OPENAI_API_KEY']
-typesense_api_key = config['TYPESENSE_API_KEY']
-typesense_api_url = config['TYPESENSE_API_URL']
+openai.api_key = openai_api_key
 
 assistant_id_1 = 'asst_ejPRaNkIhjPpNHDHCnoI5zKY'
 assistant_id_2 = 'asst_mQ8PhYHrTbEvLjfH8bVXPisQ'
