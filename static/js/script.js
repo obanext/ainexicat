@@ -54,7 +54,7 @@ async function sendMessage() {
     timeoutHandle = setTimeout(() => {
         displayAssistantMessage('😿 er is iets misgegaan, we beginnen opnieuw!');
         hideLoader();
-        resetThread();
+        setTimeout(() => resetThread(), 2000);
     }, 15000);
 
     try {
@@ -73,7 +73,7 @@ async function sendMessage() {
             displayAssistantMessage('😿 er is iets misgegaan, we beginnen opnieuw!');
             hideLoader();
             clearTimeout(timeoutHandle);
-            resetThread();
+            setTimeout(() => resetThread(), 2000);
             return;
         }
         const data = await response.json();
@@ -99,7 +99,7 @@ async function sendMessage() {
         displayAssistantMessage('😿 er is iets misgegaan, we beginnen opnieuw!');
         hideLoader();
         clearTimeout(timeoutHandle);
-        resetThread();
+        setTimeout(() => resetThread(), 2000);
     }
 
     checkInput();
@@ -117,7 +117,6 @@ function resetThread() {
     
     resetFilters();
 }
-
 
 async function sendStatusKlaar() {
     try {

@@ -4,7 +4,6 @@ import json
 import requests
 import aiohttp
 import asyncio
-from dotenv import dotenv_values
 import logging
 import os
 
@@ -126,9 +125,9 @@ def perform_typesense_search(params):
         }]
     }
 
-    response = requests.post(typesense_api_url, headers=headers, json=body)
-    
-    if response.status_code == 200:
+    try:
+        response = requests.post(typesense_api_url, headers=headers, json=body, timeout=15)
+        response.raise_for_status()
         search_results = response.json()
         results = [
             {
@@ -144,8 +143,9 @@ def perform_typesense_search(params):
 
         simplified_results = {"results": valid_results}
         return simplified_results
-    else:
-        return {"error": response.status_code, "message": response.text}
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Typesense search error: {e}")
+        return {"error": str(e), "message": "An error occurred during the Typesense search."}
 
 @app.route('/')
 def index():
@@ -197,7 +197,8 @@ def send_message():
     except openai.error.OpenAIError as e:
         return jsonify({'error': str(e)}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logging.error(f"Unexpected error: {e}")
+        return jsonify({'error': 'An unexpected error occurred'}, 500)
 
 @app.route('/apply_filters', methods=['POST'])
 def apply_filters():
@@ -235,8 +236,8 @@ def apply_filters():
     except openai.error.OpenAIError as e:
         return jsonify({'error': str(e)}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+        logging.error(f"Unexpected error: {e}")
+        return jsonify({'error': 'An unexpected error occurred'}, 500)
 
 @app.route('/reset', methods=['POST'])
 def reset():
