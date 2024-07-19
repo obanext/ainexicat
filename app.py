@@ -120,7 +120,7 @@ def perform_typesense_search(params):
             "prefix": "false",
             "vector_query": params["vector_query"],
             "include_fields": "titel,ppn",
-            "per_page": 15,
+            "per_page": 10,
             "filter_by": params["filter_by"]
         }]
     }
